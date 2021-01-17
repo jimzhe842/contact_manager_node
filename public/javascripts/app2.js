@@ -337,6 +337,7 @@ $(function() {
       let formData = new FormData($form[0]);
       let formValid = this.validateForm($form, formData);
       if (formValid) {
+        $form[0].reset();
         let json = convertToJson(formData);
         this.createContact(json);
       }
