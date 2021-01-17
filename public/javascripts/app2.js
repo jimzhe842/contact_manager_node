@@ -1,11 +1,11 @@
 $(function() {
-  
+
   let $createContactForm = $('#create-contact-form');
   let $editContactForm = $('#edit-contact-form');
   let $filterTagsList = $('.filter-tags-list');
   let $contacts = $('.contacts');
   let $main = $('main');
-  
+
   let $contact = $('#contact-template');
   let $contactLayout = $('#contact-layout');
   let contactLayoutTemplate = Handlebars.compile($contactLayout.html());
@@ -28,7 +28,8 @@ $(function() {
       }
     },
     phone_number(input) {
-      if (input.match(/^\d+$/) && (input.length === 10 || input.length === 11)) {
+      if (input.match(/^\d+$/) &&
+      (input.length === 10 || input.length === 11)) {
         return '';
       } else {
         return 'Please enter a valid phone number';
@@ -40,8 +41,8 @@ $(function() {
       }
       let tagsArr = input.split(',').map(tag => tag.trim());
       let currentTags = {};
-      for (let i = 0; i < tagsArr.length; i++) {
-        let tag = tagsArr[i];
+      for (let idx = 0; idx < tagsArr.length; idx++) {
+        let tag = tagsArr[idx];
         if (tag.length > 0 && !currentTags[tag]) {
           currentTags[tag] = true;
         } else {
@@ -50,7 +51,7 @@ $(function() {
       }
       return '';
     }
-  }
+  };
 
   function convertToJson(formData) {
     let json = {};
@@ -61,9 +62,40 @@ $(function() {
     return JSON.stringify(json);
   }
 
+  class Contact {
+    constructor(contactInfo) {
+      this.update(contactInfo);
+    }
+
+    update(contactInfo) {
+      this.id = contactInfo.id;
+      this.full_name = contactInfo.full_name;
+      this.email = contactInfo.email;
+      this.phone_number = contactInfo.phone_number;
+      this.tags = contactInfo.tags;
+      this.tagsArr = this.separateTags(contactInfo);
+    }
+
+    delete() {
+      this.getComponent().remove();
+    }
+
+    separateTags(contact) {
+      if (contact.tags) {
+        return contact.tags.split(',').map(tag => tag.trim());
+      } else {
+        return null;
+      }
+    }
+
+    getComponent() {
+      return $(`#${this.id}`);
+    }
+  }
+
   class ContactStore {
     constructor(app, contacts) {
-      
+
       this.app = app;
       this.contacts = [];
       contacts.forEach(contactInfo => {
@@ -88,6 +120,7 @@ $(function() {
           return {contact, index};
         }
       }
+      return null;
     }
 
     updateContact(contactInfo) {
@@ -158,43 +191,13 @@ $(function() {
       } else {
         contacts.forEach(contact => {
           let tags = contact.tags;
-          if (tags && filterTags.every(filterTag => tags.indexOf(filterTag) > -1)) {
+          if (tags &&
+             filterTags.every(filterTag => tags.indexOf(filterTag) > -1)) {
             matchingContacts.push(contact);
           }
         });
       }
       return matchingContacts;
-    }
-  }
-
-  class Contact {
-    constructor(contactInfo) {
-      this.update(contactInfo);
-    }
-
-    update(contactInfo) {
-      this.id = contactInfo.id;
-      this.full_name = contactInfo.full_name;
-      this.email = contactInfo.email;
-      this.phone_number = contactInfo.phone_number;
-      this.tags = contactInfo.tags;
-      this.tagsArr = this.separateTags(contactInfo);
-    }
-
-    delete() {
-      this.getComponent().remove();
-    }
-
-    separateTags(contact) {
-      if (contact.tags) {
-        return contact.tags.split(',').map(tag => tag.trim());
-      } else {
-        return null;
-      }
-    }
-
-    getComponent() {
-      return $(`#${this.id}`);
     }
   }
 
@@ -238,20 +241,25 @@ $(function() {
     filterContacts(event) {
       event.preventDefault();
       clearTimeout(this.timeout);
-      this.timeout = setTimeout(this.contactStore.displayFilteredContacts.bind(this.contactStore), 200);
+      let contactStore = this.contactStore;
+      this.timeout = setTimeout(
+        contactStore.displayFilteredContacts.bind(contactStore),
+        200);
     }
 
     onContactClick(event) {
       event.preventDefault();
       let $target = $(event.target);
-      
+
       if ($target.hasClass('edit')) {
         let id = $target.closest('li').attr('id');
         this.renderEditForm(id);
       } else if ($target.hasClass('delete')) {
         let id = $target.closest('.contact').attr('id');
         let response = confirm("Do you want to delete the contact?");
-        if (!response) {return};
+        if (!response) {
+          return;
+        }
         this.deleteContact(id);
       } else if ($target.hasClass('tag')) {
         this.addFilterTag($(event.target).text());
@@ -270,7 +278,9 @@ $(function() {
     }
 
     addFilterTag(tag) {
-      if (this.filterTags.indexOf(tag) > -1) {return};
+      if (this.filterTags.indexOf(tag) > -1) {
+        return;
+      }
       this.filterTags.push(tag);
       let $li = $('<li></li>').text(tag).addClass('filter-tag');
       $li.on('click', () => {
@@ -293,7 +303,7 @@ $(function() {
       let $form = $(event.target).closest('form');
       this.hideAllErrors($form);
     }
-  
+
     onCreateFormCancel(event) {
       $createContactForm.hide();
       $main.show();
@@ -307,14 +317,14 @@ $(function() {
       $input.addClass('input-error');
       $input.parent().prev().addClass('label-error');
     }
-  
+
     hideError($form, name) {
       let $input = $form.find(`[name="${name}"]`);
       $input.next().text('');
       $input.removeClass('input-error');
       $input.parent().prev().removeClass('label-error');
     }
-  
+
     hideAllErrors($form) {
       $form.find('.input-error').removeClass('input-error');
       $form.find('.label-error').removeClass('label-error');
@@ -331,7 +341,7 @@ $(function() {
         this.createContact(json);
       }
     }
-  
+
     onEditFormSubmit(event) {
       event.preventDefault();
       let $form = $(event.target);
@@ -413,6 +423,6 @@ $(function() {
       this.contactStore.deleteContact(id);
     }
   }
-  
-  new App();
+
+  (() => new App())();
 });
